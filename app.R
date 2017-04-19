@@ -3,31 +3,38 @@ library(ggplot2)
 library(plyr)
 library(Rcpp)
 
-sourceCpp("simulation.cpp")
+##sourceCpp("simulation.cpp")
 
 ui <- fluidPage(
-  sliderInput(inputId = "log_N",
-              label = "log10(Population size)",
-              value = 2, min = 1, max = 4),
-  sliderInput(inputId = "log_mu",
-              label = "log10(Per locus mutation rate)",
-              value = -6, min = -10, max = -3),
-  sliderInput(inputId = "log_s",
-              label = "log10(Selection coefficient)",
-              value = -1, min = -4, max = 0),
-  sliderInput(inputId = "h",
-              label = "Dominance coefficient",
-              value = 0.5, min = 0, max = 1),
-  sliderInput(inputId = "q0",
-              label = "Starting frequency",
-              value = 0.1, min = 0, max = 1),
-  actionButton(inputId = "run_button",
-                label = "Run"),
-  plotOutput(outputId = "plot")
-  )
+  tags$h1("Simulation of selection, mutation and drift at a single locus"),
+  column(4,
+         sliderInput(inputId = "log_N",
+                     label = "log10(Population size)",
+                     value = 2, min = 1, max = 4),
+         sliderInput(inputId = "log_mu",
+                     label = "log10(Per locus mutation rate)",
+                     value = -6, min = -10, max = -3),
+         sliderInput(inputId = "log_s",
+                     label = "log10(Selection coefficient)",
+                     value = -1, min = -4, max = 0),
+         sliderInput(inputId = "h",
+                     label = "Dominance coefficient",
+                     value = 0.5, min = 0, max = 1),
+         sliderInput(inputId = "q0",
+                     label = "Starting frequency",
+                     value = 0.1, min = 0, max = 1),
+         actionButton(inputId = "run_button",
+                      label = "Run"),
+         tags$p("See the code on ",
+                tags$a(href = "https://github.com/martinj/shiny_mutation", "GitHub"),
+                ".")),
+  column(8,
+         plotOutput(outputId = "plot"),
+         tableOutput(outputId = "endpoint_table"))
+)
 
 
-
+## Simulation in R.
 
 sim_variation <- function(N, mu, s, h, gen, q0) {
   q <- numeric(gen)
@@ -49,13 +56,18 @@ sim_variation <- function(N, mu, s, h, gen, q0) {
     n_Q = length(which(surviving == 2))
     q[i] <- (n_H + n_Q * 2) / (2 * (n_P + n_H + n_Q))
   }
-  data.frame(gen = 1:gen, q)
+  q
 }
+
+## Equilibrium frequency
 
 q_eq <- function(mu, k1, k2) {
   (k1 + mu - sqrt((k1 - mu)^2 + 4 * k2 * mu)) /
     (2 * k1 - 2 * k2)
 }
+
+
+## The plot
 
 plot_simulations <- function(sim) {
   combined_sim <- ldply(1:length(sim), function(i) {
@@ -67,7 +79,9 @@ plot_simulations <- function(sim) {
 }
 
 server <- function(input, output) {
-  plot_expression <- eventReactive(input$run_button, {
+  simulated_data <- reactiveValues(data = NULL)
+  
+  observeEvent(input$run_button, {
     N <- 10^input$log_N
     mu <- 10^input$log_mu
     s <- 10^input$log_s
@@ -79,25 +93,30 @@ server <- function(input, output) {
     
     sim <- replicate(10,
       data.frame(gen = 1:200,
-      q = sim_variation_cpp(N = N,
-                            mu = mu,
-                            s = s,
-                            h = h,
-                            q0 = q0,
-                            gen = 200)),
+      q = sim_variation(N = N,
+                        mu = mu,
+                        s = s,
+                        h = h,
+                        q0 = q0,
+                        gen = 200)),
       simplify = FALSE)
       
-    endpoints <- ldply(1:10, function(i) data.frame(endpoint = sim[[i]]$q[200],
+    endpoints <- ldply(1:10, function(i) data.frame(final_frequency = sim[[i]]$q[200],
                                                     replicate = i))
     
     frequency_plot <- plot_simulations(sim) + 
-      geom_text(aes(label = signif(endpoint, 2), y = endpoint, x = 200), data = endpoints) +
       geom_hline(yintercept = q_eq, colour = "red") +
-      annotate("text", x = 200, y = 0.5, label = signif(q_eq, 2), colour = "red")  
+      annotate("text", x = 200, y = q_eq + 0.1, label = signif(q_eq, 2), colour = "red")  
     
+    simulated_data$data <- list(frequency_plot, endpoints)
   })
   output$plot <- renderPlot({
-    print(plot_expression())
+    if (! is.null(simulated_data$data))
+      print(simulated_data$data[[1]])
+  })
+  output$endpoint_table <- renderTable({
+    if (! is.null(simulated_data$data))
+      simulated_data$data[[2]]
   })
 }
 
