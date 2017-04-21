@@ -1,8 +1,9 @@
 library(shiny)
 library(ggplot2)
 library(plyr)
-library(Rcpp)
 
+## Package and compiler flags for the C++ simulation function
+library(Rcpp)
 Sys.setenv( "PKG_CXXFLAGS"="-std=c++11" )
 sourceCpp("simulation.cpp")
 
@@ -94,14 +95,16 @@ server <- function(input, output) {
     
     q_eq <- q_eq(mu, s * input$h, s)
     
+    ## If you'd prefer the simulation function in R, this is where you would
+    ## remove the "_cpp" on the function call.
     sim <- replicate(10,
       data.frame(gen = 1:200,
       q = sim_variation_cpp(N = N,
-                        mu = mu,
-                        s = s,
-                        h = h,
-                        q0 = q0,
-                        gen = 200)),
+                           mu = mu,
+                           s = s,
+                           h = h,
+                           q0 = q0,
+                           gen = 200)),
       simplify = FALSE)
       
     endpoints <- ldply(1:10, function(i) data.frame(final_frequency = sim[[i]]$q[200],
