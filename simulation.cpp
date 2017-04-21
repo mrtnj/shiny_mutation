@@ -6,6 +6,11 @@
 std::random_device rd;
 std::mt19937 generator(rd());
 
+/*
+ * A naive C++ implementation of the simulation function.
+ * Probably not that much of an improvement on the R version.
+ */
+
 // [[Rcpp::export]]
 std::vector<double> sim_variation_cpp (int N,
                                        double mu,
@@ -18,7 +23,8 @@ std::vector<double> sim_variation_cpp (int N,
 
 
   for (int i = 1; i < gen; i++) {
-
+    
+    //Genotypes
     std::binomial_distribution<int> binom(2, q[i - 1]);
     std::vector<int> geno (N, 0);
     for (int j = 0; j < N; j++) {
@@ -53,6 +59,7 @@ std::vector<double> sim_variation_cpp (int N,
       }
     }
 
+    // Two rounds of random mutation
     std::vector<double> mutation_roll (N, 0);
     std::vector<double> mutation_roll2 (N, 0);
     for (int j = 0; j < surviving.size(); j++) {
@@ -79,6 +86,7 @@ std::vector<double> sim_variation_cpp (int N,
       }
     }
 
+    // Count alleles
     double n_P = 0;
     double n_H = 0;
     double n_Q = 0;

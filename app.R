@@ -35,7 +35,7 @@ ui <- fluidPage(
 )
 
 
-## Simulation in R.
+## Simulation in R
 
 sim_variation <- function(N, mu, s, h, gen, q0) {
   q <- numeric(gen)
@@ -63,7 +63,7 @@ sim_variation <- function(N, mu, s, h, gen, q0) {
   q
 }
 
-## Equilibrium frequency
+## Haldane's expression for equilibrium frequency
 
 q_eq <- function(mu, k1, k2) {
   (k1 + mu - sqrt((k1 - mu)^2 + 4 * k2 * mu)) /
@@ -91,9 +91,8 @@ server <- function(input, output) {
     s <- 10^input$log_s
     h <- input$h
     q0 <- input$q0
-    q_eq <- q_eq(mu,
-                 s * input$h,
-                 s)
+    
+    q_eq <- q_eq(mu, s * input$h, s)
     
     sim <- replicate(10,
       data.frame(gen = 1:200,
