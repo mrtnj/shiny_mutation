@@ -3,7 +3,8 @@ library(ggplot2)
 library(plyr)
 library(Rcpp)
 
-##sourceCpp("simulation.cpp")
+Sys.setenv( "PKG_CXXFLAGS"="-std=c++11" )
+sourceCpp("simulation.cpp")
 
 ui <- fluidPage(
   tags$h1("Simulation of selection, mutation and drift at a single locus"),
@@ -51,6 +52,9 @@ sim_variation <- function(N, mu, s, h, gen, q0) {
     mutated <- surviving
     mutated[which(mutation_roll < mu & surviving == 0)] <- 1
     mutated[which(mutation_roll < mu & surviving == 1)] <- 2
+    mutation_roll2 <- runif(length(surviving), 0, 1)
+    mutated[which(mutation_roll2 < mu & mutated == 0)] <- 1
+    mutated[which(mutation_roll2 < mu & mutated == 1)] <- 2
     n_P = length(which(surviving == 0))
     n_H = length(which(surviving == 1))
     n_Q = length(which(surviving == 2))
@@ -93,7 +97,7 @@ server <- function(input, output) {
     
     sim <- replicate(10,
       data.frame(gen = 1:200,
-      q = sim_variation(N = N,
+      q = sim_variation_cpp(N = N,
                         mu = mu,
                         s = s,
                         h = h,

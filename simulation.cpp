@@ -54,8 +54,10 @@ std::vector<double> sim_variation_cpp (int N,
     }
 
     std::vector<double> mutation_roll (N, 0);
+    std::vector<double> mutation_roll2 (N, 0);
     for (int j = 0; j < surviving.size(); j++) {
       mutation_roll[j] = unif(generator);
+      mutation_roll2[j] = unif(generator);
     }
 
     std::vector<int> mutated (surviving);
@@ -66,7 +68,15 @@ std::vector<double> sim_variation_cpp (int N,
       if (mutation_roll[j] < mu && surviving[j] == 1) {
         mutated[j] = 2;
       }
-
+    }
+    
+    for (int j = 0; j < surviving.size(); j++) {
+      if (mutation_roll2[j] < mu && mutated[j] == 0) {
+        mutated[j] = 1;
+      }
+      if (mutation_roll2[j] < mu && mutated[j] == 1) {
+        mutated[j] = 2;
+      }
     }
 
     double n_P = 0;
