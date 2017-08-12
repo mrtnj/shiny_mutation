@@ -28,8 +28,7 @@ ui <- fluidPage(
          actionButton(inputId = "run_button",
                       label = "Run"),
          tags$p("See the code on ",
-                tags$a(href = "https://github.com/martinj/shiny_mutation", "GitHub"),
-                ".")),
+                tags$a(href = "https://github.com/mrtnj/shiny_mutation", "GitHub"))),
   column(8,
          plotOutput(outputId = "plot"),
          tableOutput(outputId = "endpoint_table"))
